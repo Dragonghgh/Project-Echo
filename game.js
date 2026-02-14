@@ -1,104 +1,77 @@
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-let gameState = "menu";
+const TILE = 32;
 
-let saveData = {
-  room: "Entrance",
-  monsterReleased: false,
-  notesRead: []
+// 0 = floor, 1 = wall
+const map = [
+  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [1,0,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,0,1],
+  [1,0,1,0,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1],
+  [1,0,1,0,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1],
+  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+];
+
+let player = {
+  x: 2 * TILE,
+  y: 2 * TILE,
+  size: 20,
+  speed: 2
 };
 
-const rooms = {
-  "Entrance": "You wake up near a sealed exit. Power is unstable.",
-  "Main Hall": "Emergency lights flicker along the corridor.",
-  "Storage": "Broken equipment is scattered everywhere.",
-  "Control Room": "The door is locked. A keycard is required.",
-  "Test Chamber": "This is where the experiment took place."
-};
+const keys = {};
+document.addEventListener("keydown", e => keys[e.key] = true);
+document.addEventListener("keyup", e => keys[e.key] = false);
 
-function newGame() {
-  localStorage.removeItem("echo_save");
-  saveData = {
-    room: "Entrance",
-    monsterReleased: false,
-    notesRead: []
-  };
-  startGame();
+function canMove(nx, ny) {
+  const left = Math.floor(nx / TILE);
+  const right = Math.floor((nx + player.size) / TILE);
+  const top = Math.floor(ny / TILE);
+  const bottom = Math.floor((ny + player.size) / TILE);
+
+  return (
+    map[top][left] === 0 &&
+    map[top][right] === 0 &&
+    map[bottom][left] === 0 &&
+    map[bottom][right] === 0
+  );
 }
 
-function continueGame() {
-  const save = localStorage.getItem("echo_save");
-  if (save) saveData = JSON.parse(save);
-  startGame();
+function update() {
+  let nx = player.x;
+  let ny = player.y;
+
+  if (keys["ArrowUp"]) ny -= player.speed;
+  if (keys["ArrowDown"]) ny += player.speed;
+  if (keys["ArrowLeft"]) nx -= player.speed;
+  if (keys["ArrowRight"]) nx += player.speed;
+
+  if (canMove(nx, player.y)) player.x = nx;
+  if (canMove(player.x, ny)) player.y = ny;
 }
 
-function startGame() {
-  document.getElementById("menu").classList.add("hidden");
-  document.getElementById("loading").classList.remove("hidden");
-
-  setTimeout(() => {
-    document.getElementById("loading").classList.add("hidden");
-    canvas.classList.remove("hidden");
-    gameState = "play";
-    draw();
-  }, 1200);
-}
-
-document.addEventListener("keydown", e => {
-  if (gameState !== "play") return;
-
-  if (e.key === "ArrowUp") move("Main Hall");
-  if (e.key === "ArrowRight") move("Storage");
-  if (e.key === "ArrowDown") move("Test Chamber");
-
-  save();
-  draw();
-});
-
-function move(target) {
-  if (target === "Control Room" && !saveData.monsterReleased) return;
-  saveData.room = target;
-
-  if (target === "Test Chamber" && !saveData.monsterReleased) {
-    saveData.monsterReleased = true;
-  }
-}
-
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  ctx.fillStyle = "#aaa";
-  ctx.font = "18px monospace";
-  ctx.fillText("Location: " + saveData.room, 30, 40);
-
-  ctx.fillStyle = "#777";
-  wrapText(rooms[saveData.room], 30, 80, 740, 22);
-
-  if (saveData.monsterReleased) {
-    ctx.fillStyle = "#500";
-    ctx.fillText("WARNING: Unknown entity detected.", 30, 440);
-  }
-}
-
-function wrapText(text, x, y, maxWidth, lineHeight) {
-  const words = text.split(" ");
-  let line = "";
-
-  for (let n = 0; n < words.length; n++) {
-    const testLine = line + words[n] + " ";
-    const metrics = ctx.measureText(testLine);
-    if (metrics.width > maxWidth && n > 0) {
-      ctx.fillText(line, x, y);
-      line = words[n] + " ";
-      y += lineHeight;
-    } else {
-      line = testLine;
+function drawMap() {
+  for (let y = 0; y < map.length; y++) {
+    for (let x = 0; x < map[y].length; x++) {
+      ctx.fillStyle = map[y][x] === 1 ? "#222" : "#000";
+      ctx.fillRect(x * TILE, y * TILE, TILE, TILE);
     }
   }
-  ctx.fillText(line, x, y);
 }
 
-function save() {
-  localStorage.setItem("echo_save", JSON.stringify(saveData));
+function drawPlayer() {
+  ctx.fillStyle = "white";
+  ctx.fillRect(player.x, player.y, player.size, player.size);
 }
+
+function loop() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  update();
+  drawMap();
+  drawPlayer();
+  requestAnimationFrame(loop);
+}
+
+loop();
