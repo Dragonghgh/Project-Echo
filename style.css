@@ -1,1 +1,40 @@
+body {
+  margin: 0;
+  background: black;
+  color: #d0d0d0;
+  font-family: monospace;
+  text-align: center;
+}
 
+h1 {
+  letter-spacing: 4px;
+}
+
+.subtitle {
+  color: #888;
+  margin-bottom: 20px;
+}
+
+button {
+  background: #111;
+  color: #fff;
+  border: 1px solid #333;
+  padding: 10px 25px;
+  margin: 10px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #222;
+}
+
+.hidden {
+  display: none;
+}
+
+canvas {
+  display: block;
+  margin: auto;
+  background: #050505;
+}
